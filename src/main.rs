@@ -1,45 +1,121 @@
+use std::sync::{
+    atomic::{AtomicI64, Ordering},
+    Arc,
+};
+
 use teloxide::{
     prelude::*,
-    types::{MenuButton, WebAppInfo},
+    types::{
+        InlineKeyboardButton, InlineKeyboardMarkup, InlineQueryResult, InlineQueryResultArticle,
+        InputMessageContent, InputMessageContentText, MenuButton, WebAppInfo,
+    },
 };
 
 const MINI_APP_URL: &str = "https://boon-code.github.io/telegram-mini-app-test/index.html";
+const COUNTER_QUERY_PREFIX: &str = "counter:";
 
 #[tokio::main]
 async fn main() {
     let bot = Bot::from_env();
+    let counter = Arc::new(AtomicI64::new(0));
 
     println!("Bot started...");
 
-    teloxide::repl(bot, |bot: Bot, msg: Message| async move {
-        if msg.text() == Some("/start") {
-            bot.set_chat_menu_button()
-                .chat_id(msg.chat.id)
-                .menu_button(MenuButton::WebApp {
-                    text: "Open Mini App".to_string(),
-                    web_app: WebAppInfo {
-                        url: MINI_APP_URL.parse().unwrap(),
-                    },
-                })
+    let handler = dptree::entry()
+        .branch(Update::filter_message().endpoint(message_handler))
+        .branch(Update::filter_inline_query().endpoint(inline_query_handler));
+
+    Dispatcher::builder(bot, handler)
+        .dependencies(dptree::deps![counter])
+        .enable_ctrlc_handler()
+        .build()
+        .dispatch()
+        .await;
+}
+
+async fn message_handler(bot: Bot, msg: Message, counter: Arc<AtomicI64>) -> ResponseResult<()> {
+    let Some(text) = msg.text() else {
+        return respond(());
+    };
+
+    let command = text.split_whitespace().next().unwrap_or_default();
+    let command = command.split('@').next().unwrap_or_default();
+
+    match command {
+        "/start" => {
+            if msg.chat.is_private() {
+                bot.set_chat_menu_button()
+                    .chat_id(msg.chat.id)
+                    .menu_button(MenuButton::WebApp {
+                        text: "Open Mini App".to_string(),
+                        web_app: WebAppInfo {
+                            url: MINI_APP_URL.parse().unwrap(),
+                        },
+                    })
+                    .await?;
+
+                bot.send_message(
+                    msg.chat.id,
+                    "Open the Mini App from the menu button. Use its \"Send value to bot\" button, then send the inline result. Use /show to see the saved counter.",
+                )
                 .await?;
+            } else {
+                let me = bot.get_me().await?;
+                if me.has_main_web_app {
+                    let mut mini_app_url = me.tme_url();
+                    mini_app_url.set_query(Some("startapp"));
 
-            bot.send_message(
-                msg.chat.id,
-                "Open the Mini App from the menu button next to the message field.",
-            )
-            .await?;
-
-            return Ok(());
+                    let button = InlineKeyboardButton::url("Open Mini App", mini_app_url);
+                    bot.send_message(msg.chat.id, "Open the Mini App:")
+                        .reply_markup(InlineKeyboardMarkup::new([[button]]))
+                        .await?;
+                } else {
+                    bot.send_message(
+                        msg.chat.id,
+                        "Group launch is not configured yet. Set up a Main Mini App for this bot in @BotFather, then try /start again.",
+                    )
+                    .await?;
+                }
+            }
         }
-
-        if let Some(data) = msg.web_app_data() {
-            bot.send_message(msg.chat.id, format!("Mini App sent: {}", data.data))
+        "/show" => {
+            let value = counter.load(Ordering::Relaxed);
+            bot.send_message(msg.chat.id, format!("Current counter: {value}"))
                 .await?;
-
-            return Ok(());
         }
+        _ => {}
+    }
 
-        Ok(())
-    })
-    .await;
+    respond(())
+}
+
+async fn inline_query_handler(
+    bot: Bot,
+    query: InlineQuery,
+    counter: Arc<AtomicI64>,
+) -> ResponseResult<()> {
+    let results = query
+        .query
+        .strip_prefix(COUNTER_QUERY_PREFIX)
+        .and_then(|value| value.parse::<i64>().ok())
+        .map(|value| {
+            counter.store(value, Ordering::Relaxed);
+
+            let result = InlineQueryResultArticle::new(
+                format!("counter-{value}"),
+                format!("Save counter value {value}"),
+                InputMessageContent::Text(InputMessageContentText::new(format!(
+                    "Counter value: {value}"
+                ))),
+            );
+
+            vec![InlineQueryResult::Article(result)]
+        })
+        .unwrap_or_default();
+
+    bot.answer_inline_query(query.id, results)
+        .cache_time(0)
+        .await?;
+
+    respond(())
 }

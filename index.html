@@ -55,6 +55,19 @@
             font-size: 32px;
             font-variant-numeric: tabular-nums;
         }
+
+        .send-button {
+            width: 100%;
+            padding: 14px;
+            margin-top: 20px;
+            border: 0;
+            border-radius: 10px;
+            font-size: 16px;
+            cursor: pointer;
+
+            background: var(--tg-theme-button-color, #2481cc);
+            color: var(--tg-theme-button-text-color, #ffffff);
+        }
     </style>
 </head>
 
@@ -69,6 +82,8 @@
         <p id="count" aria-live="polite">0</p>
         <button id="increment" type="button" aria-label="Increase count">+1</button>
     </div>
+    <button id="send" class="send-button" type="button">Send value to bot</button>
+    <p id="send-status" aria-live="polite"></p>
 </div>
 
 <script>
@@ -103,6 +118,16 @@
 
     document.getElementById("increment").addEventListener("click", () => {
         updateCount(1);
+    });
+
+    document.getElementById("send").addEventListener("click", () => {
+        if (typeof webApp.switchInlineQuery !== "function") {
+            document.getElementById("send-status").textContent =
+                "Inline queries are not available in this Telegram version.";
+            return;
+        }
+
+        webApp.switchInlineQuery(`counter:${count}`);
     });
 </script>
 </body>
