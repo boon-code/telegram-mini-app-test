@@ -26,30 +26,34 @@
             margin: 0 auto;
         }
 
-        button {
-            width: 100%;
-            padding: 14px;
-            margin-top: 12px;
+        .counter {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 24px;
+            margin-top: 24px;
+        }
+
+        .counter button {
+            width: 72px;
+            height: 56px;
+            padding: 0;
+            margin: 0;
             border: 0;
             border-radius: 10px;
-            font-size: 16px;
+            font-size: 24px;
             cursor: pointer;
 
             background: var(--tg-theme-button-color, #2481cc);
             color: var(--tg-theme-button-text-color, #ffffff);
         }
 
-        input {
-            box-sizing: border-box;
-            width: 100%;
-            padding: 12px;
-            margin-top: 12px;
-            border: 1px solid var(--tg-theme-hint-color, #999999);
-            border-radius: 8px;
-            font-size: 16px;
-
-            background: var(--tg-theme-secondary-bg-color, #eeeeee);
-            color: var(--tg-theme-text-color, #000000);
+        #count {
+            min-width: 48px;
+            margin: 0;
+            text-align: center;
+            font-size: 32px;
+            font-variant-numeric: tabular-nums;
         }
     </style>
 </head>
@@ -60,15 +64,11 @@
 
     <p id="user"></p>
 
-    <input
-        id="message"
-        type="text"
-        placeholder="Enter something..."
-    >
-
-    <button id="send">
-        Send to bot
-    </button>
+    <div class="counter">
+        <button id="decrement" type="button" aria-label="Decrease count">-1</button>
+        <p id="count" aria-live="polite">0</p>
+        <button id="increment" type="button" aria-label="Increase count">+1</button>
+    </div>
 </div>
 
 <script>
@@ -81,8 +81,7 @@
     // Expand the Mini App to use the available space.
     webApp.expand();
 
-    // The user information is available when the Mini App
-    // is launched through a Web App button that provides it.
+    // The user information is available when Telegram provides it.
     const user = webApp.initDataUnsafe?.user;
 
     if (user) {
@@ -90,17 +89,20 @@
             `Hello, ${user.first_name}!`;
     }
 
-    document.getElementById("send").addEventListener("click", () => {
-        const value = document.getElementById("message").value;
+    let count = 0;
+    const countDisplay = document.getElementById("count");
 
-        if (!value.trim()) {
-            return;
-        }
+    function updateCount(change) {
+        count += change;
+        countDisplay.textContent = count;
+    }
 
-        // This sends a string back to the bot.
-        //
-        // Telegram closes the Mini App after sendData().
-        webApp.sendData(value);
+    document.getElementById("decrement").addEventListener("click", () => {
+        updateCount(-1);
+    });
+
+    document.getElementById("increment").addEventListener("click", () => {
+        updateCount(1);
     });
 </script>
 </body>
