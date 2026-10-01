@@ -4,5 +4,9 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-teloxide = "0.17"
+teloxide = { version = "0.17", default-features = false, features = [
+    "macros",
+    "ctrlc_handler",
+    "rustls",
+] }
 tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
