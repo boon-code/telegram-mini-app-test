@@ -121,13 +121,7 @@
     });
 
     document.getElementById("send").addEventListener("click", () => {
-        if (typeof webApp.switchInlineQuery !== "function") {
-            document.getElementById("send-status").textContent =
-                "Inline queries are not available in this Telegram version.";
-            return;
-        }
-
-        webApp.switchInlineQuery(`counter:${count}`);
+	webApp.sendData(`counter:${count}`)
     });
 </script>
 </body>
