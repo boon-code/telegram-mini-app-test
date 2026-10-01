@@ -1,0 +1,8 @@
+[package]
+name = "telegram-mini-app"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+teloxide = "0.17"
+tokio = { version = "1", features = ["macros", "rt-multi-thread"] }

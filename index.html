@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1, maximum-scale=1"
+    >
+
+    <title>Telegram Mini App</title>
+
+    <!-- Telegram Mini App JavaScript API -->
+    <script src="https://telegram.org/js/telegram-web-app.js?63"></script>
+
+    <style>
+        body {
+            margin: 0;
+            padding: 24px;
+            font-family: system-ui, sans-serif;
+            background: var(--tg-theme-bg-color, #ffffff);
+            color: var(--tg-theme-text-color, #000000);
+        }
+
+        .container {
+            max-width: 480px;
+            margin: 0 auto;
+        }
+
+        button {
+            width: 100%;
+            padding: 14px;
+            margin-top: 12px;
+            border: 0;
+            border-radius: 10px;
+            font-size: 16px;
+            cursor: pointer;
+
+            background: var(--tg-theme-button-color, #2481cc);
+            color: var(--tg-theme-button-text-color, #ffffff);
+        }
+
+        input {
+            box-sizing: border-box;
+            width: 100%;
+            padding: 12px;
+            margin-top: 12px;
+            border: 1px solid var(--tg-theme-hint-color, #999999);
+            border-radius: 8px;
+            font-size: 16px;
+
+            background: var(--tg-theme-secondary-bg-color, #eeeeee);
+            color: var(--tg-theme-text-color, #000000);
+        }
+    </style>
+</head>
+
+<body>
+<div class="container">
+    <h1>Hello Mini App 👋</h1>
+
+    <p id="user"></p>
+
+    <input
+        id="message"
+        type="text"
+        placeholder="Enter something..."
+    >
+
+    <button id="send">
+        Send to bot
+    </button>
+</div>
+
+<script>
+    // Telegram.WebApp becomes available after telegram-web-app.js loads.
+    const webApp = window.Telegram.WebApp;
+
+    // Tell Telegram that the Mini App is ready.
+    webApp.ready();
+
+    // Expand the Mini App to use the available space.
+    webApp.expand();
+
+    // The user information is available when the Mini App
+    // is launched through a Web App button that provides it.
+    const user = webApp.initDataUnsafe?.user;
+
+    if (user) {
+        document.getElementById("user").textContent =
+            `Hello, ${user.first_name}!`;
+    }
+
+    document.getElementById("send").addEventListener("click", () => {
+        const value = document.getElementById("message").value;
+
+        if (!value.trim()) {
+            return;
+        }
+
+        // This sends a string back to the bot.
+        //
+        // Telegram closes the Mini App after sendData().
+        webApp.sendData(value);
+    });
+</script>
+</body>
+</html>
