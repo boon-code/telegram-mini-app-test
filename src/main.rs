@@ -19,7 +19,6 @@ async fn main() {
                 request: Some(ButtonRequest::WebApp(WebAppInfo {
                     url: MINI_APP_URL.parse().unwrap(),
                 })),
-                ..Default::default()
             };
 
             let keyboard = KeyboardMarkup::new([[button]])
