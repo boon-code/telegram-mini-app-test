@@ -3,7 +3,7 @@ use teloxide::{
     types::{ButtonRequest, KeyboardButton, KeyboardMarkup, WebAppInfo},
 };
 
-const MINI_APP_URL: &str = "https://example.com/index.html";
+const MINI_APP_URL: &str = "https://boon-code.github.io/telegram-mini-app-test/index.html";
 
 #[tokio::main]
 async fn main() {
