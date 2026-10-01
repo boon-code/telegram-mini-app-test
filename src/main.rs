@@ -4,10 +4,8 @@ use std::sync::{
 };
 
 use teloxide::{
-    prelude::*,
-    types::{
-        InlineKeyboardButton, InlineKeyboardMarkup, InlineQueryResult, InlineQueryResultArticle,
-        InputMessageContent, InputMessageContentText, MenuButton, WebAppInfo,
+    prelude::*, sugar::request, types::{
+        InlineKeyboardButton, InlineKeyboardButtonKind::Url, InlineKeyboardMarkup, InlineQueryResult, InlineQueryResultArticle, InputMessageContent, InputMessageContentText, MenuButton, WebAppInfo,
     },
 };
 
@@ -44,21 +42,12 @@ async fn message_handler(bot: Bot, msg: Message, counter: Arc<AtomicI64>) -> Res
     match command {
         "/start" => {
             if msg.chat.is_private() {
-                bot.set_chat_menu_button()
-                    .chat_id(msg.chat.id)
-                    .menu_button(MenuButton::WebApp {
-                        text: "Open Mini App".to_string(),
-                        web_app: WebAppInfo {
-                            url: MINI_APP_URL.parse().unwrap(),
-                        },
-                    })
-                    .await?;
 
-                bot.send_message(
-                    msg.chat.id,
-                    "Open the Mini App from the menu button. Use its \"Send value to bot\" button, then send the inline result. Use /show to see the saved counter.",
-                )
-                .await?;
+                let button = InlineKeyboardButton::web_app("Open Mini App", WebAppInfo { url: MINI_APP_URL.parse().unwrap() });
+
+                bot.send_message(msg.chat.id, "Open the Mini App:")
+                    .reply_markup(InlineKeyboardMarkup::new([[button]]))
+                    .await?;
             } else {
                 let me = bot.get_me().await?;
                 if me.has_main_web_app {
@@ -100,22 +89,8 @@ async fn inline_query_handler(
         .and_then(|value| value.parse::<i64>().ok())
         .map(|value| {
             counter.store(value, Ordering::Relaxed);
-
-            let result = InlineQueryResultArticle::new(
-                format!("counter-{value}"),
-                format!("Save counter value {value}"),
-                InputMessageContent::Text(InputMessageContentText::new(format!(
-                    "Counter value: {value}"
-                ))),
-            );
-
-            vec![InlineQueryResult::Article(result)]
         })
         .unwrap_or_default();
-
-    bot.answer_inline_query(query.id, results)
-        .cache_time(0)
-        .await?;
 
     respond(())
 }
